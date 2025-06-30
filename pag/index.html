@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Invitación RPG - Perro Molesto</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  body {
+    margin: 0; padding: 0;
+    background: black;
+    color: white;
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  #intro {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
+
+  #walkingDog {
+    width: 80px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: -100px;
+    image-rendering: pixelated;
+    cursor: pointer;
+  }
+
+  #prompt {
+    display: none;
+    position: absolute;
+    width: 100%;
+    top: 60%;
+    font-size: 1rem;
+  }
+
+  /* Cuadro diálogo RPG */
+  #dialogBox {
+    display: none;
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;
+    background: black;
+    border: 4px solid white;
+    padding: 1rem;
+    box-sizing: border-box;
+    font-size: 0.85rem;
+    text-align: left;
+    z-index: 1000;
+    border-radius: 6px;
+  }
+
+  #dialogText {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+
+  #heartText {
+    flex-grow: 1;
+    text-align: center;
+    padding: 0 10px;
+  }
+
+  #dialogText img {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+  }
+
+  #dialogButtons {
+    margin-top: 10px;
+  }
+
+  /* Botones pixel */
+  .btnPixel {
+    font-family: 'Press Start 2P', cursive;
+    background: black;
+    color: white;
+    border: 2px solid white;
+    padding: 12px 24px;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .btnPixel:hover {
+    background: white;
+    color: black;
+  }
+
+  /* Mensaje final */
+  #finalMessage {
+    display: none;
+    position: fixed;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -35%);
+    font-family: 'Press Start 2P', cursive;
+    background: #222;
+    border: 4px solid white;
+    padding: 1.5rem 2rem;
+    max-width: 75vw;
+    width: 75vw;
+    z-index: 1100;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
+  #typewriterText {
+    width: 100%;
+    white-space: pre-wrap;
+  }
+
+  #finalMessage.show {
+    opacity: 1;
+  }
+
+  #finalMessage button {
+    margin-top: 15px;
+    font-family: 'Press Start 2P', cursive;
+    background: black;
+    color: white;
+    border: 2px solid white;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  #finalMessage button:hover {
+    background: white;
+    color: black;
+  }
+
+  /* Cursor parpadeante para el typewriter */
+  .cursor {
+    display: inline-block;
+    background-color: #ffff00;
+    width: 8px;
+    animation: blink 1s infinite;
+    margin-left: 2px;
+  }
+  @keyframes blink {
+    0%, 50% { background-color: #ffff00; }
+    51%, 100% { background-color: transparent; }
+  }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <img id="walkingDog" src="annoying-dog-undertale.gif" alt="Walking Dog" />
+  <p id="prompt">* Presiona al perro para ver el mensaje *</p>
+</div>
+
+<div id="dialogBox">
+  <div id="dialogText">
+    <img src="annoying-dog-undertale.gif" alt="Perro Molesto" />
+    El perro molesto pregunta:<br><br>
+    “¿Quieres acompañarme a una aventura jurásica?”
+  </div>
+  <div id="dialogButtons">
+    <button class="btnPixel" id="btnYes">Sí</button>
+    <button class="btnPixel" id="btnClaro">Claro</button>
+  </div>
+</div>
+
+<div id="finalMessage">
+  <div id="typewriterText"></div>
+  <button id="closeFinal">Cerrar</button>
+</div>
+
+<audio id="bgm" autoplay loop muted>
+  <source src="https://archive.org/download/undertaleoriginalsoundtrack/Undertale%20OST%20-%20021%20Dogsong.mp3" type="audio/mpeg" />
+</audio>
+
+<audio id="stepSound">
+  <source src="https://freesound.org/data/previews/341/341695_6266114-lq.mp3" type="audio/mpeg" />
+</audio>
+
+<audio id="clickSound">
+  <source src="https://freesound.org/data/previews/256/256113_3263906-lq.mp3" type="audio/mpeg" />
+</audio>
+
+<audio id="dateBgm" loop>
+  <source src="https://ia904607.us.archive.org/21/items/undertaleoriginalsoundtrack/Undertale%20OST%20-%20025%20Dating%20Start%21.mp3" type="audio/mpeg" />
+</audio>
+
+<script>
+  const walkingDog = document.getElementById('walkingDog');
+  const prompt = document.getElementById('prompt');
+  const dialogBox = document.getElementById('dialogBox');
+  const btnYes = document.getElementById('btnYes');
+  const btnClaro = document.getElementById('btnClaro');
+  const finalMessage = document.getElementById('finalMessage');
+  const typewriterText = document.getElementById('typewriterText');
+  const closeFinal = document.getElementById('closeFinal');
+  const stepSound = document.getElementById('stepSound');
+  const clickSound = document.getElementById('clickSound');
+  const bgm = document.getElementById('bgm');
+  const dateBgm = document.getElementById('dateBgm');
+
+  let pos = window.innerWidth;
+  const stepInterval = 300;
+  let canPlayStep = true;
+  let sonidoActivado = false;
+
+  function activarMusica() {
+    if (!sonidoActivado) {
+      bgm.muted = false;
+      bgm.play().catch(() => {});
+      sonidoActivado = true;
+      window.removeEventListener('click', activarMusica);
+    }
+  }
+  window.addEventListener('click', activarMusica);
+
+  const anim = setInterval(() => {
+    if (pos <= window.innerWidth / 2 - 40) {
+      clearInterval(anim);
+      prompt.style.display = 'block';
+    } else {
+      pos -= 4;
+      walkingDog.style.right = pos + 'px';
+
+      if (canPlayStep) {
+        stepSound.currentTime = 0;
+        stepSound.play();
+        canPlayStep = false;
+        setTimeout(() => { canPlayStep = true; }, stepInterval);
+      }
+    }
+  }, 16);
+
+  walkingDog.addEventListener('click', () => {
+    document.getElementById('intro').style.display = 'none';
+    prompt.style.display = 'none';
+    dialogBox.style.display = 'block';
+  });
+
+  function playClick() {
+    clickSound.currentTime = 0;
+    clickSound.play();
+  }
+
+  const messageLines = [
+    "¡Tenemos una cita en el cine!\n\nPelicula: Jurassic World.\n\nHora: 3:20 p.m\n\n¡No faltes!"
+  ];
+
+  function typeWriter(text, i, fnCallback) {
+    if (i < text.length) {
+      typewriterText.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
+      setTimeout(() => typeWriter(text, i + 1, fnCallback), 40);
+    } else if (typeof fnCallback == 'function') {
+      setTimeout(fnCallback, 700);
+    }
+  }
+
+  function startTypingMessage(lines, index = 0) {
+    if (index < lines.length) {
+      typeWriter(lines[index], 0, () => {
+        typewriterText.innerHTML += '<br>';
+        startTypingMessage(lines, index + 1);
+      });
+    }
+  }
+
+  function showFinalWithAnimation() {
+    finalMessage.style.display = 'block';
+    setTimeout(() => finalMessage.classList.add('show'), 50);
+    typewriterText.innerHTML = '';
+    startTypingMessage(messageLines);
+  }
+
+  function hideFinal() {
+    finalMessage.classList.remove('show');
+    setTimeout(() => finalMessage.style.display = 'none', 500);
+  }
+
+  function cambiarMusicaADate() {
+    bgm.pause();
+    dateBgm.currentTime = 0;
+    dateBgm.play().catch(() => {});
+  }
+
+  function mostrarMensajeAmor() {
+    const dialogText = document.getElementById('dialogText');
+    const dialogButtons = document.getElementById('dialogButtons');
+
+    dialogText.innerHTML = `
+      <img src="rojo.png" alt="Corazón Rojo" />
+      <span id="heartText">Ir al cine en pareja los llena de amor y determinación</span>
+      <img src="naranja.png" alt="Corazón Naranja" />
+    `;
+
+    dialogButtons.style.display = 'none';
+  }
+
+  btnYes.addEventListener('click', () => {
+    playClick();
+    cambiarMusicaADate();
+    mostrarMensajeAmor();
+    showFinalWithAnimation();
+  });
+
+  btnClaro.addEventListener('click', () => {
+    playClick();
+    cambiarMusicaADate();
+    mostrarMensajeAmor();
+    showFinalWithAnimation();
+  });
+
+  closeFinal.addEventListener('click', () => {
+    playClick();
+    hideFinal();
+  });
+</script>
+
+</body>
+</html>
